@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="20 12 60 75" width="100%" height="100%" preserveAspectRatio="xMidYMid meet">
+  <defs>
+    <!-- חיתוך לחלק העליון (רק מעל המדפסת) -->
+    <clipPath id="printer-top-clip">
+      <rect x="0" y="0" width="100" height="38" />
+    </clipPath>
+
+    <!-- חיתוך לחלק התחתון (רק מתחת למדפסת) -->
+    <clipPath id="printer-bottom-clip">
+      <rect x="0" y="58" width="100" height="42" />
+    </clipPath>
+  </defs>
+
+  <style>
+    /* אנימציה חלקה של מעבר המעטפה בתוך המדפסת */
+    @keyframes paper-flow {
+      0% { transform: translateY(0); opacity: 0; }
+      10% { transform: translateY(0); opacity: 1; }
+      70% { transform: translateY(24px); opacity: 1; }
+      85% { transform: translateY(24px); opacity: 1; }
+      92% { transform: translateY(30px); opacity: 0; }
+      100% { transform: translateY(0); opacity: 0; }
+    }
+
+    /* הבהוב עדין של נורית הסטטוס */
+    @keyframes status-blink {
+      0%, 100% { fill: #10b981; }
+      50% { fill: #34d399; }
+    }
+
+    .envelope-group {
+      animation: paper-flow 4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    }
+
+    .status-led {
+      animation: status-blink 1.5s infinite;
+    }
+  </style>
+
+  <!-- 1. המעטפה הנכנסת (חלקה, נכנסת מלמעלה) -->
+  <g clip-path="url(#printer-top-clip)">
+    <g class="envelope-group">
+      <!-- גוף המעטפה -->
+      <rect x="33" y="14" width="34" height="22" rx="2" fill="#ffffff" stroke="#0f172a" stroke-width="2" />
+      <!-- משולש הקיפול האחורי -->
+      <path d="M 33 14 L 50 25 L 67 14" fill="none" stroke="#0f172a" stroke-width="1.5" />
+    </g>
+  </g>
+
+  <!-- 2. המעטפה המודפסת (יוצאת מלמטה עם פרטי הנמען) -->
+  <g clip-path="url(#printer-bottom-clip)">
+    <g class="envelope-group">
+      <!-- גוף המעטפה המודפסת -->
+      <rect x="33" y="36" width="34" height="22" rx="2" fill="#ffffff" stroke="#0f172a" stroke-width="2" />
+      
+      <!-- בול דואר אדום קלאסי -->
+      <rect x="58" y="40" width="6" height="7" rx="1" fill="#ef4444" />
+      
+      <!-- שורות הכתובת של הנמען מודפסות ישירות -->
+      <line x1="38" y1="46" x2="52" y2="46" stroke="#2563eb" stroke-width="1.5" stroke-linecap="round" />
+      <line x1="38" y1="50" x2="54" y2="50" stroke="#64748b" stroke-width="1.2" stroke-linecap="round" />
+      <line x1="38" y1="53" x2="48" y2="53" stroke="#64748b" stroke-width="1.2" stroke-linecap="round" />
+    </g>
+  </g>
+
+  <!-- 3. גוף המדפסת (סטטי, יציב וברור) -->
+  <g>
+    <!-- חריץ הזנה עליון -->
+    <rect x="30" y="34" width="40" height="6" rx="2" fill="#0f172a" />
+    
+    <!-- גוף המדפסת הראשי -->
+    <rect x="22" y="38" width="56" height="23" rx="5" fill="#ffffff" stroke="#0f172a" stroke-width="2.5" />
+    
+    <!-- פס עיצובי כחול (נותן מראה הייטקי מודרני) -->
+    <rect x="22" y="48" width="56" height="4" fill="#2563eb" />
+    
+    <!-- כפתור הדלקה וסטטוס -->
+    <rect x="61" y="42" width="5" height="2" rx="1" fill="#e2e8f0" stroke="#0f172a" stroke-width="1.2" />
+    <circle class="status-led" cx="70" cy="43" r="1.5" fill="#10b981" />
+    
+    <!-- חריץ יציאה תחתון -->
+    <rect x="28" y="56" width="44" height="4" rx="2" fill="#0f172a" />
+  </g>
+</svg>
