@@ -1,7 +1,10 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Mail, Tag } from 'lucide-react';
 
 const HomePage = ({ onSelectEnvelopes, onSelectLabels }) => {
+  const navigate = useNavigate();
+
   return (
     <div className="flex flex-col md:flex-row gap-6 justify-center items-center min-h-[60vh]">
       <button
@@ -18,7 +21,7 @@ const HomePage = ({ onSelectEnvelopes, onSelectLabels }) => {
       
       <button
         type="button"
-        onClick={onSelectLabels}
+        onClick={() => navigate('/madbakot')}
         className="text-right bg-white rounded-lg shadow-lg p-8 w-full max-w-md hover:shadow-xl transition-shadow duration-300 cursor-pointer border border-gray-200"
       >
         <div className="flex items-center gap-4 mb-4">

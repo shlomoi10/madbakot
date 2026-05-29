@@ -1,12 +1,13 @@
 import React from 'react'
+import { Routes, Route, useNavigate, BrowserRouter } from 'react-router-dom'
 import Layout from './components/Layout'
 import HomePage from './components/HomePage'
 import LabelSetup from './components/LabelSetup'
 import FileUpload from './components/FileUpload'
 import LabelEditor from './components/LabelEditor'
 
-function App() {
-  const [view, setView] = React.useState('home')
+function AppContent() {
+  const navigate = useNavigate()
   const [labelConfig, setLabelConfig] = React.useState(null)
   const [uploadedFile, setUploadedFile] = React.useState(null)
   const [isSettingsModalOpen, setIsSettingsModalOpen] = React.useState(false)
@@ -20,53 +21,55 @@ function App() {
 
   return (
     <Layout>
-      {view === 'home' ? (
-        <HomePage
-          onSelectEnvelopes={() => {}}
-          onSelectLabels={() => setView('label-setup')}
-        />
-      ) : null}
-
-      {view === 'label-setup' ? (
-        <LabelSetup
-          initialConfig={labelConfig}
-          onCancel={() => setView('home')}
-          onSave={(config) => {
-            setLabelConfig(config)
-            setView('file-upload')
-          }}
-          onImport={(settings) => setEditorSettings(settings)}
-        />
-      ) : null}
-
-      {view === 'file-upload' ? (
-        <FileUpload
-          onFileUploaded={(fileInfo) => {
-            setUploadedFile(fileInfo)
-            setView('label-editor')
-          }}
-          onCancel={() => setView('label-setup')}
-        />
-      ) : null}
-
-      {view === 'label-editor' ? (
-        <LabelEditor
-          config={labelConfig}
-          file={uploadedFile}
-          onBack={() => setView('file-upload')}
-          onFileUpdate={setUploadedFile}
-          onReupload={() => setView('file-upload')}
-          onOpenSettings={() => setIsSettingsModalOpen(true)}
-          editorSettings={editorSettings}
-          onEditorSettingsChange={setEditorSettings}
-        />
-      ) : null}
+      <Routes future={{
+        v7_startTransition: true,
+        v7_relativeSplatPath: true,
+      }}>
+        <Route path="/" element={
+          <HomePage
+            onSelectEnvelopes={() => {}}
+            onSelectLabels={() => {}}
+          />
+        } />
+        <Route path="/madbakot" element={
+          <LabelSetup
+            initialConfig={labelConfig}
+            onCancel={() => navigate('/')}
+            onSave={(config) => {
+              setLabelConfig(config)
+              navigate('/madbakot/upload')
+            }}
+            onImport={(settings) => setEditorSettings(settings)}
+          />
+        } />
+        <Route path="/madbakot/upload" element={
+          <FileUpload
+            onFileUploaded={(fileInfo) => {
+              setUploadedFile(fileInfo)
+              navigate('/madbakot/editor')
+            }}
+            onCancel={() => navigate('/madbakot')}
+          />
+        } />
+        <Route path="/madbakot/editor" element={
+          <LabelEditor
+            config={labelConfig}
+            file={uploadedFile}
+            onBack={() => navigate('/madbakot/upload')}
+            onFileUpdate={setUploadedFile}
+            onReupload={() => navigate('/madbakot/upload')}
+            onOpenSettings={() => setIsSettingsModalOpen(true)}
+            editorSettings={editorSettings}
+            onEditorSettingsChange={setEditorSettings}
+          />
+        } />
+      </Routes>
 
       {isSettingsModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-auto">
             <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-              <h3 className="text-xl font-bold">הגדרות תוויות</h3>
+              <h3 className="text-xl font-bold">הגדרות מדבקות</h3>
               <button
                 type="button"
                 onClick={() => setIsSettingsModalOpen(false)}
@@ -90,6 +93,14 @@ function App() {
         </div>
       )}
     </Layout>
+  )
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
+    </BrowserRouter>
   )
 }
 

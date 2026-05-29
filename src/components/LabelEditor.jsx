@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import TextAlign from '@tiptap/extension-text-align';
-import Underline from '@tiptap/extension-underline';
 import { TextStyle } from '@tiptap/extension-text-style';
 import { FontFamily } from '@tiptap/extension-font-family';
 import { AlignCenter, AlignLeft, AlignRight, Bold, Underline as UnderlineIcon } from 'lucide-react';
@@ -183,9 +182,11 @@ const LabelEditor = ({ config, file, onBack, onFileUpdate, onReupload, onOpenSet
   const editor = useEditor({
     extensions: [
       StarterKit,
-      Underline,
       TextStyle,
-      FontFamily,
+      FontFamily.configure({
+        types: ['textStyle'],
+        extensions: ['Heebo', 'Rubik', 'Assistant', 'Alef'],
+      }),
       FontSize,
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
       Variable,
@@ -194,7 +195,7 @@ const LabelEditor = ({ config, file, onBack, onFileUpdate, onReupload, onOpenSet
     editorProps: {
       attributes: {
         class: 'focus:outline-none',
-        style: `font-family: ${selectedFont}, Heebo, system-ui, sans-serif; font-size: ${selectedFontSize};`,
+        style: `font-size: ${selectedFontSize};`,
       },
       handleDrop: (view, event) => {
         const e = event;
@@ -242,7 +243,7 @@ const LabelEditor = ({ config, file, onBack, onFileUpdate, onReupload, onOpenSet
   useEffect(() => {
     ensureGoogleFontLoaded(selectedFont);
     if (editor) {
-      editor.commands.setFontFamily(selectedFont);
+      editor.chain().focus().selectAll().setFontFamily(selectedFont).run();
     }
     if (onEditorSettingsChange) {
       onEditorSettingsChange({
@@ -551,7 +552,7 @@ const LabelEditor = ({ config, file, onBack, onFileUpdate, onReupload, onOpenSet
   return (
     <div className="w-full">
       <div className="flex items-center justify-between gap-4 mb-4">
-        <h2 className="text-2xl font-bold">עריכת תוויות</h2>
+        <h2 className="text-2xl font-bold">עריכת מדבקות</h2>
         <button
           type="button"
           onClick={onBack}

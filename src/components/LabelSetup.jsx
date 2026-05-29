@@ -190,7 +190,7 @@ const LabelSetup = ({ initialConfig, onSave, onCancel, onImport }) => {
     <div className="w-full">
       <div className="flex flex-col lg:flex-row gap-8">
         <div className="w-full lg:w-[560px]">
-          <h2 className="text-2xl font-bold mb-4">הגדרת דף תוויות</h2>
+          <h2 className="text-2xl font-bold mb-4">הגדרת דף מדבקות</h2>
 
           <div className="bg-white border border-gray-200 rounded-lg p-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -244,7 +244,7 @@ const LabelSetup = ({ initialConfig, onSave, onCancel, onImport }) => {
               )}
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">רוחב תווית (ס״מ)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">רוחב מדבקה (ס״מ)</label>
                 <input
                   type="number"
                   step="0.1"
@@ -256,7 +256,7 @@ const LabelSetup = ({ initialConfig, onSave, onCancel, onImport }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">גובה תווית (ס״מ)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">גובה מדבקה (ס״מ)</label>
                 <input
                   type="number"
                   step="0.1"
@@ -316,7 +316,7 @@ const LabelSetup = ({ initialConfig, onSave, onCancel, onImport }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">מספר תוויות לרוחב</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">מספר מדבקות לרוחב</label>
                 <input
                   type="number"
                   step="1"
@@ -328,7 +328,7 @@ const LabelSetup = ({ initialConfig, onSave, onCancel, onImport }) => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">מספר תוויות לאורך</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">מספר מדבקות לאורך</label>
                 <input
                   type="number"
                   step="1"
@@ -345,7 +345,7 @@ const LabelSetup = ({ initialConfig, onSave, onCancel, onImport }) => {
                 {canFit ? (
                   <span className="text-green-700">הכל נכנס בתוך הדף</span>
                 ) : (
-                  <span className="text-red-700">שימו לב: התוויות/שוליים לא נכנסים בתוך הדף</span>
+                  <span className="text-red-700">שימו לב: המדבקות/שוליים לא נכנסים בתוך הדף</span>
                 )}
               </div>
 
@@ -420,7 +420,7 @@ const LabelSetup = ({ initialConfig, onSave, onCancel, onImport }) => {
             </div>
 
             <div className="mt-4 text-sm text-gray-600">
-              עמוד: {safe.pageWidthCm.toFixed(2)}×{safe.pageHeightCm.toFixed(2)} ס״מ | תווית: {safe.labelWidthCm.toFixed(2)}×{safe.labelHeightCm.toFixed(2)} ס״מ | {safe.cols}×{safe.rows}
+              עמוד: {safe.pageWidthCm.toFixed(2)}×{safe.pageHeightCm.toFixed(2)} ס״מ | מדבקה: {safe.labelWidthCm.toFixed(2)}×{safe.labelHeightCm.toFixed(2)} ס״מ | {safe.cols}×{safe.rows}
             </div>
           </div>
         </div>
