@@ -42,7 +42,9 @@ const LabelSetup = ({ initialConfig, onSave, onCancel, onImport }) => {
       const text = await file.text();
       const data = JSON.parse(text);
 
-      if (data.type !== 'madbakot-label-settings' || !data.config) {
+      const kind = data.kind;
+      const isKindValid = kind ? kind === 'label' : data.type === 'madbakot-label-settings';
+      if (!isKindValid || !data.config) {
         alert('קובץ לא תקין');
         return;
       }

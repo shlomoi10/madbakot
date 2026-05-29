@@ -5,11 +5,15 @@ import HomePage from './components/HomePage'
 import LabelSetup from './components/LabelSetup'
 import FileUpload from './components/FileUpload'
 import LabelEditor from './components/LabelEditor'
+import EnvelopeSetup from './components/EnvelopeSetup'
+import EnvelopeEditor from './components/EnvelopeEditor'
 
 function AppContent() {
   const navigate = useNavigate()
   const [labelConfig, setLabelConfig] = React.useState(null)
   const [uploadedFile, setUploadedFile] = React.useState(null)
+  const [envelopeConfig, setEnvelopeConfig] = React.useState(null)
+  const [envelopeFile, setEnvelopeFile] = React.useState(null)
   const [isSettingsModalOpen, setIsSettingsModalOpen] = React.useState(false)
   const [editorSettings, setEditorSettings] = React.useState({
     font: 'Heebo',
@@ -29,6 +33,36 @@ function AppContent() {
           <HomePage
             onSelectEnvelopes={() => {}}
             onSelectLabels={() => {}}
+          />
+        } />
+
+        <Route path="/maatafot" element={
+          <EnvelopeSetup
+            initialConfig={envelopeConfig}
+            onCancel={() => navigate('/')}
+            onSave={(config) => {
+              setEnvelopeConfig(config)
+              navigate('/maatafot/upload')
+            }}
+          />
+        } />
+        <Route path="/maatafot/upload" element={
+          <FileUpload
+            onFileUploaded={(fileInfo) => {
+              setEnvelopeFile(fileInfo)
+              navigate('/maatafot/editor')
+            }}
+            onCancel={() => navigate('/maatafot')}
+          />
+        } />
+        <Route path="/maatafot/editor" element={
+          <EnvelopeEditor
+            config={envelopeConfig}
+            file={envelopeFile}
+            onBack={() => navigate('/maatafot/upload')}
+            onFileUpdate={setEnvelopeFile}
+            onReupload={() => navigate('/maatafot/upload')}
+            onOpenSettings={() => navigate('/maatafot')}
           />
         } />
         <Route path="/madbakot" element={

@@ -9,7 +9,7 @@ const HomePage = ({ onSelectEnvelopes, onSelectLabels }) => {
     <div className="flex flex-col md:flex-row gap-6 justify-center items-center min-h-[60vh]">
       <button
         type="button"
-        onClick={onSelectEnvelopes}
+        onClick={() => navigate('/maatafot')}
         className="text-right bg-white rounded-lg shadow-lg p-8 w-full max-w-md hover:shadow-xl transition-shadow duration-300 cursor-pointer border border-gray-200"
       >
         <div className="flex items-center gap-4 mb-4">
