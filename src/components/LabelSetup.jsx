@@ -14,7 +14,7 @@ const cmToMm = (cm) => cm * 10;
 const clampNonNegative = (n) => (Number.isFinite(n) && n >= 0 ? n : 0);
 const clampNumber = (n) => (Number.isFinite(n) ? n : 0);
 
-const LabelSetup = ({ initialConfig, onSave, onCancel }) => {
+const LabelSetup = ({ initialConfig, onSave, onCancel, onImport }) => {
   const [pagePreset, setPagePreset] = useState(initialConfig?.pagePreset ?? 'A4');
   const [pageWidthCm, setPageWidthCm] = useState(
     initialConfig?.pageWidthCm ?? mmToCm(210)
@@ -33,6 +33,48 @@ const LabelSetup = ({ initialConfig, onSave, onCancel }) => {
 
   const [cols, setCols] = useState(initialConfig?.cols ?? 2);
   const [rows, setRows] = useState(initialConfig?.rows ?? 7);
+
+  const handleImport = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+
+      if (data.type !== 'madbakot-label-settings' || !data.config) {
+        alert('קובץ לא תקין');
+        return;
+      }
+
+      const cfg = data.config;
+      setPagePreset(cfg.pagePreset ?? 'A4');
+      setPageWidthCm(cfg.pageWidthCm ?? mmToCm(210));
+      setPageHeightCm(cfg.pageHeightCm ?? mmToCm(297));
+      setLabelWidthCm(cfg.labelWidthCm ?? 3.4);
+      setLabelHeightCm(cfg.labelHeightCm ?? 2.2);
+      setMarginLeftCm(cfg.marginLeftCm ?? 0);
+      setMarginRightCm(cfg.marginRightCm ?? 0);
+      setMarginTopCm(cfg.marginTopCm ?? 0);
+      setMarginBottomCm(cfg.marginBottomCm ?? 0);
+      setCols(cfg.cols ?? 2);
+      setRows(cfg.rows ?? 7);
+
+      if (onImport) {
+        onImport({
+          font: data.font ?? 'Heebo',
+          fontSize: data.fontSize ?? '12pt',
+          verticalAlign: data.verticalAlign ?? 'top',
+          editorDoc: data.editorDoc ?? null,
+          hasHeader: data.hasHeader ?? true,
+        });
+      }
+    } catch (err) {
+      alert('שגיאה בקריאת הקובץ');
+    }
+
+    e.target.value = '';
+  };
 
   const preset = useMemo(
     () => PAGE_PRESETS.find((p) => p.value === pagePreset) ?? PAGE_PRESETS[0],
@@ -308,6 +350,15 @@ const LabelSetup = ({ initialConfig, onSave, onCancel }) => {
               </div>
 
               <div className="flex gap-3">
+                <label className="rounded-md border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50 cursor-pointer">
+                  ייבוא הגדרות
+                  <input
+                    type="file"
+                    accept=".json"
+                    onChange={handleImport}
+                    className="hidden"
+                  />
+                </label>
                 <button
                   type="button"
                   onClick={onCancel}

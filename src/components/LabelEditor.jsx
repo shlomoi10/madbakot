@@ -96,7 +96,7 @@ const Variable = Node.create({
         'data-col-idx': HTMLAttributes.colIdx,
         'data-label': HTMLAttributes.label,
         class:
-          'inline-flex items-center rounded-full border border-gray-300 bg-white px-2 py-0.5 text-sm text-gray-700 select-none',
+          'inline-flex items-center rounded-full border border-gray-300 bg-white px-1 py-0 text-[10px] leading-none h-5 text-gray-700 select-none',
       },
       HTMLAttributes.label,
     ];
@@ -169,11 +169,12 @@ const downloadJson = (obj, filename) => {
   URL.revokeObjectURL(url);
 };
 
-const LabelEditor = ({ config, file, onBack, onFileUpdate, onReupload, onOpenSettings }) => {
-  const [hasHeader, setHasHeader] = useState(file?.hasHeader ?? true);
-  const [selectedFont, setSelectedFont] = useState('Heebo');
-  const [selectedFontSize, setSelectedFontSize] = useState('12pt');
-  const [docJson, setDocJson] = useState(null);
+const LabelEditor = ({ config, file, onBack, onFileUpdate, onReupload, onOpenSettings, editorSettings, onEditorSettingsChange }) => {
+  const [hasHeader, setHasHeader] = useState(editorSettings?.hasHeader ?? file?.hasHeader ?? true);
+  const [selectedFont, setSelectedFont] = useState(editorSettings?.font ?? 'Heebo');
+  const [selectedFontSize, setSelectedFontSize] = useState(editorSettings?.fontSize ?? '12pt');
+  const [verticalAlign, setVerticalAlign] = useState(editorSettings?.verticalAlign ?? 'top');
+  const [docJson, setDocJson] = useState(editorSettings?.editorDoc ?? null);
   const [rowIndex, setRowIndex] = useState(0);
 
   const labelWcm = Number(config?.labelWidthCm) || 5;
@@ -189,7 +190,7 @@ const LabelEditor = ({ config, file, onBack, onFileUpdate, onReupload, onOpenSet
       TextAlign.configure({ types: ['heading', 'paragraph'] }),
       Variable,
     ],
-    content: '<p></p>',
+    content: docJson ? undefined : '<p></p>',
     editorProps: {
       attributes: {
         class: 'focus:outline-none',
@@ -225,20 +226,47 @@ const LabelEditor = ({ config, file, onBack, onFileUpdate, onReupload, onOpenSet
       setDocJson(ed.getJSON());
     },
     onCreate: ({ editor: ed }) => {
+      if (docJson) {
+        ed.commands.setContent(docJson);
+      }
       setDocJson(ed.getJSON());
     },
   });
+
+  useEffect(() => {
+    if (editor && docJson) {
+      editor.commands.setContent(docJson);
+    }
+  }, [docJson, editor]);
 
   useEffect(() => {
     ensureGoogleFontLoaded(selectedFont);
     if (editor) {
       editor.commands.setFontFamily(selectedFont);
     }
+    if (onEditorSettingsChange) {
+      onEditorSettingsChange({
+        font: selectedFont,
+        fontSize: selectedFontSize,
+        verticalAlign,
+        editorDoc: docJson,
+        hasHeader,
+      });
+    }
   }, [selectedFont, editor]);
 
   useEffect(() => {
     if (editor) {
       editor.commands.setFontSize(selectedFontSize);
+    }
+    if (onEditorSettingsChange) {
+      onEditorSettingsChange({
+        font: selectedFont,
+        fontSize: selectedFontSize,
+        verticalAlign,
+        editorDoc: docJson,
+        hasHeader,
+      });
     }
   }, [selectedFontSize, editor]);
 
@@ -256,6 +284,18 @@ const LabelEditor = ({ config, file, onBack, onFileUpdate, onReupload, onOpenSet
   useEffect(() => {
     setHasHeader(file?.hasHeader ?? true);
   }, [file?.hasHeader]);
+
+  useEffect(() => {
+    if (onEditorSettingsChange) {
+      onEditorSettingsChange({
+        font: selectedFont,
+        fontSize: selectedFontSize,
+        verticalAlign,
+        editorDoc: docJson,
+        hasHeader,
+      });
+    }
+  }, [verticalAlign, docJson]);
 
   const data = file?.data ?? [];
 
@@ -310,6 +350,15 @@ const LabelEditor = ({ config, file, onBack, onFileUpdate, onReupload, onOpenSet
         hasHeader: checked,
       });
     }
+    if (onEditorSettingsChange) {
+      onEditorSettingsChange({
+        font: selectedFont,
+        fontSize: selectedFontSize,
+        verticalAlign,
+        editorDoc: docJson,
+        hasHeader: checked,
+      });
+    }
   };
 
   const handleSaveSettings = () => {
@@ -322,6 +371,7 @@ const LabelEditor = ({ config, file, onBack, onFileUpdate, onReupload, onOpenSet
       editorDoc: editor?.getJSON() ?? docJson,
       font: selectedFont,
       fontSize: selectedFontSize,
+      verticalAlign,
     };
 
     downloadJson(payload, 'label-settings.json');
@@ -329,6 +379,9 @@ const LabelEditor = ({ config, file, onBack, onFileUpdate, onReupload, onOpenSet
 
   const handlePrint = () => {
     if (!editor || !config || !file) return;
+
+    const verticalJustify =
+      verticalAlign === 'bottom' ? 'flex-end' : verticalAlign === 'middle' ? 'center' : 'flex-start';
 
     const pageW = Number(config.pageWidthCm) || 21;
     const pageH = Number(config.pageHeightCm) || 29.7;
@@ -360,7 +413,7 @@ const LabelEditor = ({ config, file, onBack, onFileUpdate, onReupload, onOpenSet
       .map((pageLabels, pageIdx) => {
         const cells = Array.from({ length: labelsPerPage }).map((_, idx) => {
           const content = pageLabels[idx] ?? '';
-          return `<div class="label"><div class="labelContent">${content}</div></div>`;
+          return `<div class="label"><div class="labelContent"><div class="labelInner">${content}</div></div></div>`;
         });
 
         return `
@@ -423,9 +476,13 @@ const LabelEditor = ({ config, file, onBack, onFileUpdate, onReupload, onOpenSet
               width: 100%;
               height: 100%;
               overflow: hidden;
+              display: flex;
+              flex-direction: column;
+              justify-content: ${verticalJustify};
               word-break: break-word;
               overflow-wrap: anywhere;
             }
+            .labelInner { width: 100%; }
             p { margin: 0; }
           </style>
         </head>
@@ -487,6 +544,9 @@ const LabelEditor = ({ config, file, onBack, onFileUpdate, onReupload, onOpenSet
 
   const toolbarButtonClass =
     'rounded-md border border-gray-300 px-2.5 py-2 text-gray-700 hover:bg-gray-50 disabled:opacity-50';
+
+  const verticalJustify =
+    verticalAlign === 'bottom' ? 'flex-end' : verticalAlign === 'middle' ? 'center' : 'flex-start';
 
   return (
     <div className="w-full">
@@ -657,6 +717,19 @@ const LabelEditor = ({ config, file, onBack, onFileUpdate, onReupload, onOpenSet
                   </button>
 
                   <div className="flex items-center gap-2">
+                    <span className="text-sm text-gray-600">גובה</span>
+                    <select
+                      value={verticalAlign}
+                      onChange={(e) => setVerticalAlign(e.target.value)}
+                      className="rounded-md border border-gray-300 px-3 py-1.5 text-sm"
+                    >
+                      <option value="top">למעלה</option>
+                      <option value="middle">אמצע</option>
+                      <option value="bottom">למטה</option>
+                    </select>
+                  </div>
+
+                  <div className="flex items-center gap-2">
                     <span className="text-sm text-gray-600">פונט</span>
                     <select
                       value={selectedFont}
@@ -708,8 +781,19 @@ const LabelEditor = ({ config, file, onBack, onFileUpdate, onReupload, onOpenSet
                         overflow: 'hidden',
                       }}
                     >
-                      <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
-                        <EditorContent editor={editor} />
+                      <div
+                        style={{
+                          position: 'absolute',
+                          inset: 0,
+                          overflow: 'hidden',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          justifyContent: verticalJustify,
+                        }}
+                      >
+                        <div style={{ width: '100%' }}>
+                          <EditorContent editor={editor} />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -771,11 +855,15 @@ const LabelEditor = ({ config, file, onBack, onFileUpdate, onReupload, onOpenSet
                         position: 'absolute',
                         inset: 0,
                         overflow: 'hidden',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: verticalJustify,
                         wordBreak: 'break-word',
                         overflowWrap: 'anywhere',
                       }}
-                      dangerouslySetInnerHTML={{ __html: previewHtml }}
-                    />
+                    >
+                      <div style={{ width: '100%' }} dangerouslySetInnerHTML={{ __html: previewHtml }} />
+                    </div>
                   </div>
                 </div>
               </div>

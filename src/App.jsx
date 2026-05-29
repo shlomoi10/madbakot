@@ -10,6 +10,13 @@ function App() {
   const [labelConfig, setLabelConfig] = React.useState(null)
   const [uploadedFile, setUploadedFile] = React.useState(null)
   const [isSettingsModalOpen, setIsSettingsModalOpen] = React.useState(false)
+  const [editorSettings, setEditorSettings] = React.useState({
+    font: 'Heebo',
+    fontSize: '12pt',
+    verticalAlign: 'top',
+    editorDoc: null,
+    hasHeader: true,
+  })
 
   return (
     <Layout>
@@ -28,6 +35,7 @@ function App() {
             setLabelConfig(config)
             setView('file-upload')
           }}
+          onImport={(settings) => setEditorSettings(settings)}
         />
       ) : null}
 
@@ -49,6 +57,8 @@ function App() {
           onFileUpdate={setUploadedFile}
           onReupload={() => setView('file-upload')}
           onOpenSettings={() => setIsSettingsModalOpen(true)}
+          editorSettings={editorSettings}
+          onEditorSettingsChange={setEditorSettings}
         />
       ) : null}
 
@@ -73,6 +83,7 @@ function App() {
                   setLabelConfig(config)
                   setIsSettingsModalOpen(false)
                 }}
+                onImport={(settings) => setEditorSettings(settings)}
               />
             </div>
           </div>
