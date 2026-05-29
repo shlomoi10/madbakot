@@ -4,7 +4,7 @@ import StarterKit from '@tiptap/starter-kit';
 import TextAlign from '@tiptap/extension-text-align';
 import { TextStyle } from '@tiptap/extension-text-style';
 import { FontFamily } from '@tiptap/extension-font-family';
-import { AlignCenter, AlignLeft, AlignRight, Bold, Underline as UnderlineIcon } from 'lucide-react';
+import { AlignCenter, AlignLeft, AlignRight, Bold, Underline as UnderlineIcon, ArrowRight } from 'lucide-react';
 import { Extension, Node } from '@tiptap/core';
 import { Plugin, PluginKey } from 'prosemirror-state';
 import { Decoration, DecorationSet } from 'prosemirror-view';
@@ -230,7 +230,6 @@ const LabelEditor = ({ config, file, onBack, onFileUpdate, onReupload, onOpenSet
       if (docJson) {
         ed.commands.setContent(docJson);
       }
-      setDocJson(ed.getJSON());
     },
   });
 
@@ -552,14 +551,16 @@ const LabelEditor = ({ config, file, onBack, onFileUpdate, onReupload, onOpenSet
   return (
     <div className="w-full">
       <div className="flex items-center justify-between gap-4 mb-4">
-        <h2 className="text-2xl font-bold">עריכת מדבקות</h2>
-        <button
-          type="button"
-          onClick={onBack}
-          className="rounded-md border border-gray-300 px-4 py-2 text-gray-700 hover:bg-gray-50"
-        >
-          חזרה
-        </button>
+        <div className="flex items-center gap-4">
+          <button
+            type="button"
+            onClick={onBack}
+            className="rounded-md border border-gray-300 p-2 text-gray-700 hover:bg-gray-50"
+          >
+            <ArrowRight className="w-5 h-5" />
+          </button>
+          <h2 className="text-2xl font-bold">עריכת מדבקות</h2>
+        </div>
       </div>
 
       {file && (

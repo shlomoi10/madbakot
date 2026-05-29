@@ -186,11 +186,34 @@ const LabelSetup = ({ initialConfig, onSave, onCancel, onImport }) => {
     }
   };
 
+  const handleReset = () => {
+    setPagePreset('A4');
+    setPageWidthCm(mmToCm(210));
+    setPageHeightCm(mmToCm(297));
+    setLabelWidthCm(3.4);
+    setLabelHeightCm(2.2);
+    setMarginLeftCm(0);
+    setMarginRightCm(0);
+    setMarginTopCm(0);
+    setMarginBottomCm(0);
+    setCols(2);
+    setRows(7);
+  };
+
   return (
     <div className="w-full">
       <div className="flex flex-col lg:flex-row gap-8">
         <div className="w-full lg:w-[560px]">
-          <h2 className="text-2xl font-bold mb-4">הגדרת דף מדבקות</h2>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-2xl font-bold">הגדרת דף מדבקות</h2>
+            <button
+              type="button"
+              onClick={handleReset}
+              className="rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-50"
+            >
+              איפוס הגדרות
+            </button>
+          </div>
 
           <div className="bg-white border border-gray-200 rounded-lg p-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

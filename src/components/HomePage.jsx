@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Mail, Tag } from 'lucide-react';
+import { Mail, StickyNote } from 'lucide-react';
 
 const HomePage = ({ onSelectEnvelopes, onSelectLabels }) => {
   const navigate = useNavigate();
@@ -25,7 +25,7 @@ const HomePage = ({ onSelectEnvelopes, onSelectLabels }) => {
         className="text-right bg-white rounded-lg shadow-lg p-8 w-full max-w-md hover:shadow-xl transition-shadow duration-300 cursor-pointer border border-gray-200"
       >
         <div className="flex items-center gap-4 mb-4">
-          <Tag className="w-12 h-12 text-purple-600" />
+          <StickyNote className="w-12 h-12 text-purple-600" />
           <h3 className="text-2xl font-bold text-gray-800">מדבקות</h3>
         </div>
         <p className="text-gray-600">הדפסה על דף מדבקות</p>
