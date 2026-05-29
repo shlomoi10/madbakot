@@ -21,6 +21,8 @@ const colIdxToLetter = (idx) => {
   return s;
 };
 
+const CM_TO_PX = 37.7952755906;
+
 const ensureGoogleFontLoaded = (fontFamily) => {
   const id = `gf-${fontFamily.replaceAll(' ', '-')}`;
   if (document.getElementById(id)) return;
@@ -155,12 +157,27 @@ const replaceVariablesInHtml = (html, row) => {
   return root.innerHTML;
 };
 
+const downloadJson = (obj, filename) => {
+  const blob = new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+};
+
 const LabelEditor = ({ config, file, onBack, onFileUpdate, onReupload, onOpenSettings }) => {
   const [hasHeader, setHasHeader] = useState(file?.hasHeader ?? true);
   const [selectedFont, setSelectedFont] = useState('Heebo');
-  const [selectedFontSize, setSelectedFontSize] = useState('16px');
+  const [selectedFontSize, setSelectedFontSize] = useState('12pt');
   const [docJson, setDocJson] = useState(null);
   const [rowIndex, setRowIndex] = useState(0);
+
+  const labelWcm = Number(config?.labelWidthCm) || 5;
+  const labelHcm = Number(config?.labelHeightCm) || 3;
 
   const editor = useEditor({
     extensions: [
@@ -175,9 +192,8 @@ const LabelEditor = ({ config, file, onBack, onFileUpdate, onReupload, onOpenSet
     content: '<p></p>',
     editorProps: {
       attributes: {
-        class:
-          'min-h-[180px] rounded-md border border-gray-300 p-3 focus:outline-none',
-        style: `font-family: ${selectedFont}, Heebo, system-ui, sans-serif;`,
+        class: 'focus:outline-none',
+        style: `font-family: ${selectedFont}, Heebo, system-ui, sans-serif; font-size: ${selectedFontSize};`,
       },
       handleDrop: (view, event) => {
         const e = event;
@@ -226,6 +242,17 @@ const LabelEditor = ({ config, file, onBack, onFileUpdate, onReupload, onOpenSet
     }
   }, [selectedFontSize, editor]);
 
+  const editorBox = useMemo(() => {
+    const maxW = 760;
+    const maxH = 240;
+    const scale = Math.min(maxW / (labelWcm * CM_TO_PX), maxH / (labelHcm * CM_TO_PX));
+    return {
+      scale,
+      widthPx: Math.max(1, Math.round(labelWcm * CM_TO_PX * scale)),
+      heightPx: Math.max(1, Math.round(labelHcm * CM_TO_PX * scale)),
+    };
+  }, [labelWcm, labelHcm]);
+
   useEffect(() => {
     setHasHeader(file?.hasHeader ?? true);
   }, [file?.hasHeader]);
@@ -263,17 +290,16 @@ const LabelEditor = ({ config, file, onBack, onFileUpdate, onReupload, onOpenSet
   }, [docJson, editor, currentRow]);
 
   const previewBox = useMemo(() => {
-    const labelW = Number(config?.labelWidthCm) || 5;
-    const labelH = Number(config?.labelHeightCm) || 3;
     const maxW = 520;
     const maxH = 220;
-    const scale = Math.min(maxW / labelW, maxH / labelH);
+    const scale = Math.min(maxW / (labelWcm * CM_TO_PX), maxH / (labelHcm * CM_TO_PX));
 
     return {
-      widthPx: Math.max(160, Math.round(labelW * scale)),
-      heightPx: Math.max(90, Math.round(labelH * scale)),
+      widthPx: Math.max(1, Math.round(labelWcm * CM_TO_PX * scale)),
+      heightPx: Math.max(1, Math.round(labelHcm * CM_TO_PX * scale)),
+      scale,
     };
-  }, [config?.labelWidthCm, config?.labelHeightCm]);
+  }, [labelWcm, labelHcm]);
 
   const handleHeaderChange = (checked) => {
     setHasHeader(checked);
@@ -284,6 +310,179 @@ const LabelEditor = ({ config, file, onBack, onFileUpdate, onReupload, onOpenSet
         hasHeader: checked,
       });
     }
+  };
+
+  const handleSaveSettings = () => {
+    const payload = {
+      version: 1,
+      type: 'madbakot-label-settings',
+      savedAt: new Date().toISOString(),
+      config,
+      hasHeader,
+      editorDoc: editor?.getJSON() ?? docJson,
+      font: selectedFont,
+      fontSize: selectedFontSize,
+    };
+
+    downloadJson(payload, 'label-settings.json');
+  };
+
+  const handlePrint = () => {
+    if (!editor || !config || !file) return;
+
+    const pageW = Number(config.pageWidthCm) || 21;
+    const pageH = Number(config.pageHeightCm) || 29.7;
+
+    const ml = Number(config.marginLeftCm) || 0;
+    const mr = Number(config.marginRightCm) || 0;
+    const mt = Number(config.marginTopCm) || 0;
+    const mb = Number(config.marginBottomCm) || 0;
+
+    const cols = Number(config.cols) || 1;
+    const rows = Number(config.rows) || 1;
+    const labelW = Number(config.labelWidthCm) || 5;
+    const labelH = Number(config.labelHeightCm) || 3;
+
+    const templateHtml = editor.getHTML();
+    const labelsPerPage = Math.max(1, rows * cols);
+
+    const filled = bodyRows.map((row) => replaceVariablesInHtml(templateHtml, row));
+
+    const pages = [];
+    for (let i = 0; i < filled.length; i += labelsPerPage) {
+      const slice = filled.slice(i, i + labelsPerPage);
+      pages.push(slice);
+    }
+
+    ensureGoogleFontLoaded(selectedFont);
+
+    const pageHtml = pages
+      .map((pageLabels, pageIdx) => {
+        const cells = Array.from({ length: labelsPerPage }).map((_, idx) => {
+          const content = pageLabels[idx] ?? '';
+          return `<div class="label"><div class="labelContent">${content}</div></div>`;
+        });
+
+        return `
+          <div class="page" data-page="${pageIdx}">
+            <div class="grid">
+              ${cells.join('')}
+            </div>
+          </div>
+        `;
+      })
+      .join('');
+
+    const html = `
+      <!doctype html>
+      <html dir="rtl">
+        <head>
+          <meta charset="utf-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1" />
+          <title>Print Labels</title>
+          <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=${encodeURIComponent(selectedFont).replaceAll(
+            '%20',
+            '+'
+          )}:wght@300;400;500;700&display=swap" />
+          <style>
+            @page { size: ${pageW}cm ${pageH}cm; margin: 0; }
+            html, body { margin: 0; padding: 0; }
+            body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+            .page {
+              width: ${pageW}cm;
+              height: ${pageH}cm;
+              box-sizing: border-box;
+              padding: ${mt}cm ${mr}cm ${mb}cm ${ml}cm;
+              page-break-after: always;
+              font-family: ${selectedFont}, Heebo, system-ui, sans-serif;
+              font-size: ${selectedFontSize};
+              line-height: 1.2;
+            }
+            .grid {
+              width: 100%;
+              height: 100%;
+              display: grid;
+              grid-template-columns: repeat(${cols}, ${labelW}cm);
+              grid-template-rows: repeat(${rows}, ${labelH}cm);
+              grid-auto-flow: row;
+              gap: 0;
+              align-content: start;
+              justify-content: start;
+            }
+            .label {
+              width: ${labelW}cm;
+              height: ${labelH}cm;
+              box-sizing: border-box;
+              overflow: hidden;
+              position: relative;
+              contain: layout paint;
+            }
+            .labelContent {
+              position: absolute;
+              inset: 0;
+              width: 100%;
+              height: 100%;
+              overflow: hidden;
+              word-break: break-word;
+              overflow-wrap: anywhere;
+            }
+            p { margin: 0; }
+          </style>
+        </head>
+        <body>
+          ${pageHtml}
+          <script>
+            window.onload = () => { window.focus(); window.print(); };
+          </script>
+        </body>
+      </html>
+    `;
+
+    const iframe = document.createElement('iframe');
+    iframe.style.position = 'fixed';
+    iframe.style.right = '0';
+    iframe.style.bottom = '0';
+    iframe.style.width = '0';
+    iframe.style.height = '0';
+    iframe.style.border = '0';
+    iframe.style.opacity = '0';
+    iframe.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(iframe);
+
+    const doc = iframe.contentWindow?.document;
+    if (!doc) {
+      iframe.remove();
+      return;
+    }
+
+    doc.open();
+    doc.write(html);
+    doc.close();
+
+    const cleanup = () => {
+      try {
+        iframe.remove();
+      } catch {
+        // ignore
+      }
+    };
+
+    const onAfterPrint = () => {
+      iframe.contentWindow?.removeEventListener('afterprint', onAfterPrint);
+      cleanup();
+    };
+
+    iframe.onload = () => {
+      const w = iframe.contentWindow;
+      if (!w) {
+        cleanup();
+        return;
+      }
+
+      w.addEventListener('afterprint', onAfterPrint);
+      w.focus();
+      w.print();
+    };
   };
 
   const toolbarButtonClass =
@@ -359,28 +558,50 @@ const LabelEditor = ({ config, file, onBack, onFileUpdate, onReupload, onOpenSet
       {file ? (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           <div className="lg:col-span-4">
-            <div className="bg-white border border-gray-200 rounded-lg p-4">
-              <div className="text-sm font-medium text-gray-700 mb-3">עמודות</div>
-              <div className="flex flex-wrap gap-2">
-                {columns.map((col) => (
-                  <div
-                    key={col.idx}
-                    draggable
-                    onDragStart={(e) => {
-                      e.dataTransfer.setData('text/colIdx', String(col.idx));
-                      e.dataTransfer.setData('text/colLabel', col.label);
-                      e.dataTransfer.effectAllowed = 'copy';
-                    }}
-                    className="select-none rounded-full border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 cursor-grab active:cursor-grabbing"
-                    title="גרור לעורך"
-                  >
-                    {col.label}
-                  </div>
-                ))}
+            <div className="space-y-4">
+              <div className="bg-white border border-gray-200 rounded-lg p-4">
+                <div className="text-sm font-medium text-gray-700 mb-3">עמודות</div>
+                <div className="flex flex-wrap gap-2">
+                  {columns.map((col) => (
+                    <div
+                      key={col.idx}
+                      draggable
+                      onDragStart={(e) => {
+                        e.dataTransfer.setData('text/colIdx', String(col.idx));
+                        e.dataTransfer.setData('text/colLabel', col.label);
+                        e.dataTransfer.effectAllowed = 'copy';
+                      }}
+                      className="select-none rounded-full border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-700 cursor-grab active:cursor-grabbing"
+                      title="גרור לעורך"
+                    >
+                      {col.label}
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-4 text-xs text-gray-500">גרור צ'יפ אל העורך כדי להוסיף שדה</div>
               </div>
 
-              <div className="mt-4 text-xs text-gray-500">
-                גרור צ'יפ אל העורך כדי להוסיף שדה
+              <div className="bg-white border border-gray-200 rounded-lg p-4">
+                <div className="text-sm font-medium text-gray-700 mb-3">פעולות</div>
+                <div className="flex flex-col gap-2">
+                  <button
+                    type="button"
+                    onClick={handleSaveSettings}
+                    className="rounded-md border border-gray-300 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    disabled={!config}
+                  >
+                    שמור הגדרות
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handlePrint}
+                    className="rounded-md bg-blue-600 px-3 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
+                    disabled={!editor || !config || !file || !bodyRows.length}
+                  >
+                    הדפסה
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -456,19 +677,43 @@ const LabelEditor = ({ config, file, onBack, onFileUpdate, onReupload, onOpenSet
                       onChange={(e) => setSelectedFontSize(e.target.value)}
                       className="rounded-md border border-gray-300 px-3 py-1.5 text-sm"
                     >
-                      <option value="12px">12</option>
-                      <option value="14px">14</option>
-                      <option value="16px">16</option>
-                      <option value="18px">18</option>
-                      <option value="20px">20</option>
-                      <option value="24px">24</option>
-                      <option value="28px">28</option>
-                      <option value="32px">32</option>
+                      <option value="9pt">9</option>
+                      <option value="10pt">10</option>
+                      <option value="11pt">11</option>
+                      <option value="12pt">12</option>
+                      <option value="13pt">13</option>
+                      <option value="14pt">14</option>
+                      <option value="16pt">16</option>
+                      <option value="18pt">18</option>
+                      <option value="20pt">20</option>
                     </select>
                   </div>
                 </div>
 
-                <EditorContent editor={editor} />
+                <div className="w-full overflow-auto">
+                  <div
+                    className="rounded-md border border-gray-300 bg-white overflow-hidden"
+                    style={{ width: `${editorBox.widthPx}px`, height: `${editorBox.heightPx}px` }}
+                  >
+                    <div
+                      style={{
+                        width: `${labelWcm}cm`,
+                        height: `${labelHcm}cm`,
+                        transformOrigin: 'top right',
+                        transform: `scale(${editorBox.scale})`,
+                        fontFamily: `${selectedFont}, Heebo, system-ui, sans-serif`,
+                        fontSize: selectedFontSize,
+                        lineHeight: 1.2,
+                        position: 'relative',
+                        overflow: 'hidden',
+                      }}
+                    >
+                      <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
+                        <EditorContent editor={editor} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -500,14 +745,39 @@ const LabelEditor = ({ config, file, onBack, onFileUpdate, onReupload, onOpenSet
 
               <div className="w-full overflow-auto">
                 <div
-                  className="rounded-md border border-gray-200 bg-gray-50 p-3"
+                  className="rounded-md border border-gray-200 bg-gray-50 overflow-hidden"
                   style={{
                     width: `${previewBox.widthPx}px`,
                     height: `${previewBox.heightPx}px`,
-                    fontFamily: `${selectedFont}, Heebo, system-ui, sans-serif`,
                   }}
-                  dangerouslySetInnerHTML={{ __html: previewHtml }}
-                />
+                >
+                  <div
+                    style={{
+                      width: `${labelWcm}cm`,
+                      height: `${labelHcm}cm`,
+                      transformOrigin: 'top right',
+                      transform: `scale(${previewBox.scale})`,
+                      fontFamily: `${selectedFont}, Heebo, system-ui, sans-serif`,
+                      fontSize: selectedFontSize,
+                      lineHeight: 1.2,
+                      position: 'relative',
+                      overflow: 'hidden',
+                      wordBreak: 'break-word',
+                      overflowWrap: 'anywhere',
+                    }}
+                  >
+                    <div
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        overflow: 'hidden',
+                        wordBreak: 'break-word',
+                        overflowWrap: 'anywhere',
+                      }}
+                      dangerouslySetInnerHTML={{ __html: previewHtml }}
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           </div>
