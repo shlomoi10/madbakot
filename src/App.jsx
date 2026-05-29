@@ -9,6 +9,7 @@ function App() {
   const [view, setView] = React.useState('home')
   const [labelConfig, setLabelConfig] = React.useState(null)
   const [uploadedFile, setUploadedFile] = React.useState(null)
+  const [isSettingsModalOpen, setIsSettingsModalOpen] = React.useState(false)
 
   return (
     <Layout>
@@ -41,8 +42,42 @@ function App() {
       ) : null}
 
       {view === 'label-editor' ? (
-        <LabelEditor config={labelConfig} file={uploadedFile} onBack={() => setView('file-upload')} />
+        <LabelEditor
+          config={labelConfig}
+          file={uploadedFile}
+          onBack={() => setView('file-upload')}
+          onFileUpdate={setUploadedFile}
+          onReupload={() => setView('file-upload')}
+          onOpenSettings={() => setIsSettingsModalOpen(true)}
+        />
       ) : null}
+
+      {isSettingsModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-auto">
+            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+              <h3 className="text-xl font-bold">הגדרות תוויות</h3>
+              <button
+                type="button"
+                onClick={() => setIsSettingsModalOpen(false)}
+                className="rounded-md border border-gray-300 px-3 py-1.5 text-gray-700 hover:bg-gray-50"
+              >
+                סגור
+              </button>
+            </div>
+            <div className="p-4">
+              <LabelSetup
+                initialConfig={labelConfig}
+                onCancel={() => setIsSettingsModalOpen(false)}
+                onSave={(config) => {
+                  setLabelConfig(config)
+                  setIsSettingsModalOpen(false)
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </Layout>
   )
 }
